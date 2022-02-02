@@ -3,6 +3,8 @@ import os
 import sys
 
 all_sprites = pygame.sprite.Group()
+clock = pygame.time.Clock()
+FPS = 30
 
 
 def load_image(name, colorkey=None):
@@ -86,14 +88,15 @@ class Setka:
             for j in range(7):
                 if self.board[i][j]:
                     main_pos = i, j
+        global ball
         if cell and main_pos:
             if cell[0] == (main_pos[0] + 2) and cell[1] == main_pos[1]:
                 if ball[cell[1]][cell[0]] and ball[cell[1]][cell[0] - 1] and \
                         not (ball[cell[1]][cell[0] - 2]):
-                    ball[cell[0]][cell[1]].rect.move(-170, 0)
-                    ball[cell[0]][cell[1]], ball[cell[0] - 2][cell[1]] = \
-                        ball[cell[0] - 2][cell[1]], ball[cell[0]][cell[1]]
-                    ball[cell[0]][cell[1]] = 0
+                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(-170, 0)
+                    ball[cell[1]][cell[0]], ball[cell[1]][cell[0] - 2] = \
+                        ball[cell[1]][cell[0] - 2], ball[cell[1]][cell[0]]
+                    all_sprites.remove()
             elif cell[0] == (main_pos[0] - 2) and cell[1] == main_pos[1]:
                 return
             elif cell[1] == (main_pos[1] + 2) and cell[0] == main_pos[0]:
@@ -130,14 +133,49 @@ class Ball(pygame.sprite.Sprite):
             pos_move = Sr.get_click_left(event_pos)
 
 
+def terminate():
+    pygame.quit()
+    sys.exit()
+
+
+def start_screen():
+    intro_text = ['Ancent Franch Solitai', "",
+                  "Правила игры:",
+                  "RMB - Выбрать шарик который хотите передвинуть",
+                  "LMB - Выбрать место, куда хотите сдвинуть шарик",
+                  "Цель игры - убрать все шарики с доски"
+                  ]
+
+    fon = pygame.transform.scale(load_image('Board.png'), (1, height))
+    screen.blit(fon, (0, 0))
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+                return  # начинаем игру
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
 if __name__ == '__main__':
 
     pygame.init()
     size = width, height = 1000, 700
     screen = pygame.display.set_mode(size)
     running = True
-    clock = pygame.time.Clock()
-    FPS = 30
+    start_screen()
     Board(1, 1, all_sprites)
     ball = [[0] * 7 for i in range(7)]
     for x in range(2, 5):
@@ -161,7 +199,6 @@ if __name__ == '__main__':
         for y in range(5, 7):
             ball[y][x] = Ball(390 + (x - 2) * 84, 478 + (y - 5) * 84, all_sprites)
     all_sprites.draw(screen)
-
     Sr = Setka(7, 7)
     while running:
         pygame.display.flip()
