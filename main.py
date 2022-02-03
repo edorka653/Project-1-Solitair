@@ -96,13 +96,24 @@ class Setka:
                     ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(-170, 0)
                     ball[cell[1]][cell[0]], ball[cell[1]][cell[0] - 2] = \
                         ball[cell[1]][cell[0] - 2], ball[cell[1]][cell[0]]
-                    all_sprites.remove()
             elif cell[0] == (main_pos[0] - 2) and cell[1] == main_pos[1]:
-                return
+                if ball[cell[1]][cell[0]] and ball[cell[1]][cell[0] + 1] and \
+                        not (ball[cell[1]][cell[0] + 2]):
+                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(170, 0)
+                    ball[cell[1]][cell[0]], ball[cell[1]][cell[0] + 2] = \
+                        ball[cell[1]][cell[0] + 2], ball[cell[1]][cell[0]]
             elif cell[1] == (main_pos[1] + 2) and cell[0] == main_pos[0]:
-                return
+                if ball[cell[0]][cell[1]] and ball[cell[0]][cell[1] - 1] and \
+                        not (ball[cell[0]][cell[1] - 2]):
+                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(0, -170)
+                    ball[cell[0]][cell[1]], ball[cell[0]][cell[1] - 2] = \
+                        ball[cell[0]][cell[1] - 2], ball[cell[0]][cell[1]]
             elif cell[1] == (main_pos[1] - 2) and cell[0] == main_pos[0]:
-                return
+                if ball[cell[0]][cell[1]] and ball[cell[0]][cell[1] + 1] and \
+                        not (ball[cell[0]][cell[1] + 2]):
+                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(0, 170)
+                    ball[cell[0]][cell[1]], ball[cell[0]][cell[1] + 2] = \
+                        ball[cell[0]][cell[1] + 2], ball[cell[0]][cell[1]]
             else:
                 return
 
@@ -146,8 +157,6 @@ def start_screen():
                   "Цель игры - убрать все шарики с доски"
                   ]
 
-    fon = pygame.transform.scale(load_image('Board.png'), (1, height))
-    screen.blit(fon, (0, 0))
     font = pygame.font.Font(None, 30)
     text_coord = 50
     for line in intro_text:
@@ -164,7 +173,7 @@ def start_screen():
                 terminate()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
-                return  # начинаем игру
+                return
         pygame.display.flip()
         clock.tick(FPS)
 
