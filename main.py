@@ -29,35 +29,49 @@ class Setka:
     def __init__(self, cell_x, cell_y):
         self.cell_x = cell_x
         self.cell_y = cell_y
-        self.board = [[0] * cell_x for i in range(cell_y)]
+        self.board = [[1] * cell_x for i in range(cell_y)]
+        self.put_balls()
         self.cell_size = 85
         self.top = 40
         self.left = 201
+        self.active_cell = None
+        self.empty_cell = load_image('Empty_Ball.png')
 
-    def draw(self, screen):
-        for i in range(self.cell_y):
-            for j in range(self.cell_x):
-                if self.board[j][i] == 0:
-                    pygame.draw.rect(screen, pygame.Color('white'),
-                                     (self.left + j * self.cell_size, self.top + i * self.cell_size,
-                                      self.cell_size,
-                                      self.cell_size), 1)
+    def init_draw(self):
+        image = pygame.Surface([self.cell_size * self.cell_x, self.cell_size * self.cell_y])
+        image = image.convert()
+        colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+        return image
 
+    def put_balls(self):
+        for x in range(2, 5):
+            for y in range(2):
+                self.board[y][x] = Ball(388 + (x - 2) * 84, 53 + y * 84, all_sprites)
+
+        for x in range(3):
+            for y in range(2, 5):
+                self.board[y][x] = Ball(217 + x * 85, 223 + (y - 2) * 84, all_sprites)
+        for x in range(3, 6):
+            for y in range(2, 5):
+                X = 472 + (x - 3) * 85
+                Y = 222 + (y - 2) * 84
+                if not (X == 472 and Y == 306):
+                    self.board[y][x] = Ball(472 + (x - 3) * 85, 222 + (y - 2) * 84, all_sprites)
                 else:
-                    pygame.draw.rect(screen, pygame.Color('green'),
-                                     (self.left + j * self.cell_size, self.top + i * self.cell_size,
-                                      self.cell_size,
-                                      self.cell_size), 1)
+                    self.board[y][x] = 0
+        for x in range(6, 7):
+            for y in range(2, 5):
+                self.board[y][x] = Ball(725 + (x - 6) * 85, 222 + (y - 2) * 83, all_sprites)
 
-    def set_view(self, left, top, cell_size):
-        self.left = left
-        self.top = top
-        self.cell_size = cell_size
+        for x in range(2, 5):
+            for y in range(5, 7):
+                self.board[y][x] = Ball(390 + (x - 2) * 84, 478 + (y - 5) * 84, all_sprites)
 
     def get_click_left(self, mouse_pos):
         cell = self.get_cell(mouse_pos)
-        self.on_click_left(cell)
-        return cell
+        if cell:
+            self.on_click_left(cell)
 
     def get_click_right(self, mouse_pos):
         cell = self.get_cell(mouse_pos)
@@ -75,47 +89,70 @@ class Setka:
             return None
 
     def on_click_left(self, cell):
-        if cell:
-            for i in range(7):
-                for j in range(7):
-                    self.board[i][j] = 0
-            self.board[cell[0]][cell[1]] = (self.board[cell[0]][cell[1]] + 1) % 2
-            return cell
+        self.active_cell = cell
+        self.draw_frame(cell)
 
-    def on_click_right(self, cell):
-        main_pos = 0
+    def draw_frame(self, cell):
+        image = pygame.Surface([self.cell_size * self.cell_x, self.cell_size * self.cell_y])
+        image = image.convert()
+        colorkey = image.get_at((0, 0))
+        image.set_colorkey(colorkey)
+        pygame.draw.rect(image, pygame.Color((255, 255, 255, 0)),
+                         (cell[0] * self.cell_size, cell[1] * self.cell_size, self.cell_size,
+                          self.cell_size), 1)
+        self.image = image
+
+    def check_end(self):
         for i in range(7):
             for j in range(7):
-                if self.board[i][j]:
-                    main_pos = i, j
-        global ball
-        if cell and main_pos:
-            if cell[0] == (main_pos[0] + 2) and cell[1] == main_pos[1]:
-                if ball[cell[1]][cell[0]] and ball[cell[1]][cell[0] - 1] and \
-                        not (ball[cell[1]][cell[0] - 2]):
-                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(-170, 0)
-                    ball[cell[1]][cell[0]], ball[cell[1]][cell[0] - 2] = \
-                        ball[cell[1]][cell[0] - 2], ball[cell[1]][cell[0]]
-            elif cell[0] == (main_pos[0] - 2) and cell[1] == main_pos[1]:
-                if ball[cell[1]][cell[0]] and ball[cell[1]][cell[0] + 1] and \
-                        not (ball[cell[1]][cell[0] + 2]):
-                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(170, 0)
-                    ball[cell[1]][cell[0]], ball[cell[1]][cell[0] + 2] = \
-                        ball[cell[1]][cell[0] + 2], ball[cell[1]][cell[0]]
-            elif cell[1] == (main_pos[1] + 2) and cell[0] == main_pos[0]:
-                if ball[cell[0]][cell[1]] and ball[cell[0]][cell[1] - 1] and \
-                        not (ball[cell[0]][cell[1] - 2]):
-                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(0, -170)
-                    ball[cell[0]][cell[1]], ball[cell[0]][cell[1] - 2] = \
-                        ball[cell[0]][cell[1] - 2], ball[cell[0]][cell[1]]
-            elif cell[1] == (main_pos[1] - 2) and cell[0] == main_pos[0]:
-                if ball[cell[0]][cell[1]] and ball[cell[0]][cell[1] + 1] and \
-                        not (ball[cell[0]][cell[1] + 2]):
-                    ball[cell[1]][cell[0]].rect = ball[cell[1]][cell[0]].rect.move(0, 170)
-                    ball[cell[0]][cell[1]], ball[cell[0]][cell[1] + 2] = \
-                        ball[cell[0]][cell[1] + 2], ball[cell[0]][cell[1]]
-            else:
-                return
+                if type(self.board[i][j]) != int:
+                    for u, v in (-1, 0), (1, 0), (0, -1), (0, 1):
+                        if 0 <= i + u * 2 < 7 and 0 <= j + v * 2 < 7:
+                            if 2 <= i + u * 2 < 5 or 2 <= j + v * 2 < 5:
+                                if self.board[i + u][j + v]:
+                                    if self.board[i + u * 2][j + v * 2] == 0:
+                                        return True
+        return False
+
+    def on_click_right(self, cell):
+        empty_cell = self.active_cell
+        if cell and empty_cell:
+            if cell[0] == (empty_cell[0] + 2) and cell[1] == empty_cell[1]:
+                if cell[0] - 2 >= 0 and self.board[cell[1]][cell[0]] and self.board[cell[1]][cell[0] - 1] and \
+                        not (self.board[cell[1]][cell[0] - 2]):
+                    self.board[cell[1]][cell[0]].rect = self.board[cell[1]][cell[0]].rect.move(-170, 0)
+                    self.board[cell[1]][cell[0]], self.board[cell[1]][cell[0] - 2] = \
+                        self.board[cell[1]][cell[0] - 2], self.board[cell[1]][cell[0]]
+                    self.board[cell[1]][cell[0] - 1].image = self.empty_cell
+                    self.board[cell[1]][cell[0] - 1] = 0
+
+
+            elif cell[0] == (empty_cell[0] - 2) and cell[1] == empty_cell[1]:
+                if cell[0] + 2 < 7 and self.board[cell[1]][cell[0]] and self.board[cell[1]][cell[0] + 1] and \
+                        not (self.board[cell[1]][cell[0] + 2]):
+                    self.board[cell[1]][cell[0]].rect = self.board[cell[1]][cell[0]].rect.move(170, 0)
+                    self.board[cell[1]][cell[0]], self.board[cell[1]][cell[0] + 2] = \
+                        self.board[cell[1]][cell[0] + 2], self.board[cell[1]][cell[0]]
+                    self.board[cell[1]][cell[0] + 1].image = self.empty_cell
+                    self.board[cell[1]][cell[0] + 1] = 0
+
+            elif cell[1] == (empty_cell[1] + 2) and cell[0] == empty_cell[0]:
+                if cell[1] - 2 >= 0 and self.board[cell[1]][cell[0]] and self.board[cell[1] - 1][cell[0]] and \
+                        not (self.board[cell[1] - 2][cell[0]]):
+                    self.board[cell[1]][cell[0]].rect = self.board[cell[1]][cell[0]].rect.move(0, -170)
+                    self.board[cell[1]][cell[0]], self.board[cell[1] - 2][cell[0]] = \
+                        self.board[cell[1] - 2][cell[0]], self.board[cell[1]][cell[0]]
+                    self.board[cell[1] - 1][cell[0]].image = self.empty_cell
+                    self.board[cell[1] - 1][cell[0]] = 0
+
+            elif cell[1] == (empty_cell[1] - 2) and cell[0] == empty_cell[0]:
+                if cell[1] + 2 < 7 and self.board[cell[1]][cell[0]] and self.board[cell[1] + 1][cell[0]] and \
+                        not (self.board[cell[1] + 2][cell[0]]):
+                    self.board[cell[1]][cell[0]].rect = self.board[cell[1]][cell[0]].rect.move(0, 170)
+                    self.board[cell[1]][cell[0]], self.board[cell[1] + 2][cell[0]] = \
+                        self.board[cell[1] + 2][cell[0]], self.board[cell[1]][cell[0]]
+                    self.board[cell[1] + 1][cell[0]].image = self.empty_cell
+                    self.board[cell[1] + 1][cell[0]] = 0
 
 
 class Ball(pygame.sprite.Sprite):
@@ -128,20 +165,9 @@ class Ball(pygame.sprite.Sprite):
 
     def update(self, event_pos, type):
         if type == 3:
-            pos_move = Sr.get_click_right(event_pos)
-            if pos_move is None:
-                return
-            if not ((pos_move[0] < 2 or pos_move[0] > 4) and
-                    (pos_move[1] < 2 or pos_move[1] > 4)):
-                return
-            Sr.board[pos_move[0]][pos_move[1]] = 1
-            my_pos = (self.rect.left, self.rect.top)
-            if pos_move[0] != my_pos[0] or pos_move[1] == my_pos[1]:
-                print('Можно сделать ход')
-            elif pos_move[0] == my_pos[0] or pos_move[1] != my_pos[1]:
-                print('Можно сделать ход')
+            Sr.get_click_right(event_pos)
         if type == 1:
-            pos_move = Sr.get_click_left(event_pos)
+            Sr.get_click_left(event_pos)
 
 
 def terminate():
@@ -150,7 +176,7 @@ def terminate():
 
 
 def start_screen():
-    intro_text = ['Ancent Franch Solitai', "",
+    intro_text = ['French Solitair', "",
                   "Правила игры:",
                   "RMB - Выбрать шарик который хотите передвинуть",
                   "LMB - Выбрать место, куда хотите сдвинуть шарик",
@@ -173,42 +199,59 @@ def start_screen():
                 terminate()
             elif event.type == pygame.KEYDOWN or \
                     event.type == pygame.MOUSEBUTTONDOWN:
+
+                return
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+def end_screen():
+    score = 0
+    for i in range(7):
+        for j in range(7):
+            if type(Sr.board[i][j]) != int:
+                score += 1
+    score = 32 - score
+    intro_text = [f'Игра окончена']
+    if score < 31:
+        intro_text.extend(['Но вы можете ЛУЧШЕ!', f'Ваш счёт: {score}'])
+    else:
+        intro_text.append('Вы ПОБЕДИЛИ!')
+
+    font = pygame.font.Font(None, 30)
+    text_coord = 50
+    for line in intro_text:
+        string_rendered = font.render(line, 1, pygame.Color('white'))
+        intro_rect = string_rendered.get_rect()
+        text_coord += 10
+        intro_rect.top = text_coord
+        intro_rect.x = 10
+        text_coord += intro_rect.height
+        screen.blit(string_rendered, intro_rect)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                terminate()
+            elif event.type == pygame.KEYDOWN or \
+                    event.type == pygame.MOUSEBUTTONDOWN:
+
                 return
         pygame.display.flip()
         clock.tick(FPS)
 
 
 if __name__ == '__main__':
-
+    bg = load_image('BackGround.png')
     pygame.init()
     size = width, height = 1000, 700
     screen = pygame.display.set_mode(size)
     running = True
     start_screen()
+    screen.blit(bg, (0, 0))
     Board(1, 1, all_sprites)
-    ball = [[0] * 7 for i in range(7)]
-    for x in range(2, 5):
-        for y in range(2):
-            ball[y][x] = Ball(388 + (x - 2) * 84, 53 + y * 84, all_sprites)
-
-    for x in range(3):
-        for y in range(2, 5):
-            ball[y][x] = Ball(217 + x * 85, 223 + (y - 2) * 84, all_sprites)
-    for x in range(3, 6):
-        for y in range(2, 5):
-            X = 472 + (x - 3) * 85
-            Y = 222 + (y - 2) * 84
-            if not (X == 472 and Y == 306):
-                ball[y][x] = Ball(472 + (x - 3) * 85, 222 + (y - 2) * 84, all_sprites)
-    for x in range(6, 7):
-        for y in range(2, 5):
-            ball[y][x] = Ball(725 + (x - 6) * 85, 222 + (y - 2) * 83, all_sprites)
-
-    for x in range(2, 5):
-        for y in range(5, 7):
-            ball[y][x] = Ball(390 + (x - 2) * 84, 478 + (y - 5) * 84, all_sprites)
     all_sprites.draw(screen)
     Sr = Setka(7, 7)
+    end_flag = False
     while running:
         pygame.display.flip()
         clock.tick(FPS)
@@ -221,6 +264,11 @@ if __name__ == '__main__':
                     Sr.get_click_left(event.pos)
                 if event.button == 3:
                     all_sprites.update(event.pos, 3)
+                    if not(Sr.check_end()):
+                        end_flag = True
         all_sprites.draw(screen)
-        Sr.draw(screen)
+        Sr.init_draw()
+        if end_flag:
+            screen.fill('Black')
+            end_screen()
     pygame.quit()
